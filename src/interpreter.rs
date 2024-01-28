@@ -80,11 +80,25 @@ impl Expr {
     pub fn lambda(parameters: Vec<String>, body: Expr) -> Self {
         Expr::Lambda(parameters, Box::new(body))
     }
+
+    pub fn function(parameters: Vec<String>, body: Expr, closure: Rc<Scope>) -> Self {
+        Expr::Function(Rc::new(Function::new(parameters, Box::new(body), closure)))
+    }
+
+    pub fn builtin_function(
+        name: impl Into<String>,
+        func: fn(&[Expr], &mut Scope) -> Result<Expr, String>,
+        kind: BuiltinKind,
+    ) -> Self {
+        Expr::BuiltinFunction(BuiltinFunction::new(name, func, kind))
+    }
 }
 
 use core::fmt;
 use std::collections::HashMap;
 use std::rc::Rc;
+
+use crate::builtins::initialize_global_scope;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Scope {
@@ -100,10 +114,13 @@ impl Default for Scope {
 
 impl Scope {
     pub fn new() -> Self {
-        Scope {
+        let mut scope = Scope {
             variables: HashMap::new(),
             parent: None,
-        }
+        };
+        initialize_global_scope(&mut scope);
+
+        scope
     }
 
     pub fn with_parent(parent: Rc<Scope>) -> Self {

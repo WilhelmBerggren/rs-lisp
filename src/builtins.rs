@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::interpreter::{eval, BuiltinFunction, BuiltinKind, Expr, Scope};
+use crate::interpreter::{eval, BuiltinKind, Expr, Scope};
 
 fn builtin_add(args: &[Expr], _: &mut Scope) -> Result<Expr, String> {
     let mut result = 0.0;
@@ -197,96 +197,56 @@ fn builtin_is_symbol(args: &[Expr], _: &mut Scope) -> Result<Expr, String> {
 pub fn initialize_global_scope(scope: &mut Scope) {
     scope.set_variable(
         "+".to_string(),
-        Expr::BuiltinFunction(BuiltinFunction::new("+", builtin_add, BuiltinKind::Eager)),
+        Expr::builtin_function("+", builtin_add, BuiltinKind::Eager),
     );
 
     scope.set_variable(
         "apply".to_string(),
-        Expr::BuiltinFunction(BuiltinFunction::new(
-            "apply",
-            builtin_apply,
-            BuiltinKind::SpecialForm,
-        )),
+        Expr::builtin_function("apply", builtin_apply, BuiltinKind::SpecialForm),
     );
 
     scope.set_variable(
         "list".to_string(),
-        Expr::BuiltinFunction(BuiltinFunction::new(
-            "list",
-            builtin_list,
-            BuiltinKind::Eager,
-        )),
+        Expr::builtin_function("list", builtin_list, BuiltinKind::Eager),
     );
 
     scope.set_variable(
         "fn".to_string(),
-        Expr::BuiltinFunction(BuiltinFunction::new(
-            "fn",
-            builtin_fn,
-            BuiltinKind::SpecialForm,
-        )),
+        Expr::builtin_function("fn", builtin_fn, BuiltinKind::SpecialForm),
     );
 
     scope.set_variable(
         "quote".to_string(),
-        Expr::BuiltinFunction(BuiltinFunction::new(
-            "quote".to_string(),
-            builtin_quote,
-            BuiltinKind::SpecialForm,
-        )),
+        Expr::builtin_function("quote".to_string(), builtin_quote, BuiltinKind::SpecialForm),
     );
 
     scope.set_variable(
         "def".to_string(),
-        Expr::BuiltinFunction(BuiltinFunction::new(
-            "def",
-            builtin_def,
-            BuiltinKind::SpecialForm,
-        )),
+        Expr::builtin_function("def", builtin_def, BuiltinKind::SpecialForm),
     );
 
     scope.set_variable(
         "if".to_string(),
-        Expr::BuiltinFunction(BuiltinFunction::new(
-            "if",
-            builtin_if,
-            BuiltinKind::SpecialForm,
-        )),
+        Expr::builtin_function("if", builtin_if, BuiltinKind::SpecialForm),
     );
 
     scope.set_variable(
         "first".to_string(),
-        Expr::BuiltinFunction(BuiltinFunction::new(
-            "first",
-            builtin_first,
-            BuiltinKind::Eager,
-        )),
+        Expr::builtin_function("first", builtin_first, BuiltinKind::Eager),
     );
 
     scope.set_variable(
         "rest".to_string(),
-        Expr::BuiltinFunction(BuiltinFunction::new(
-            "rest",
-            builtin_rest,
-            BuiltinKind::Eager,
-        )),
+        Expr::builtin_function("rest", builtin_rest, BuiltinKind::Eager),
     );
 
     scope.set_variable(
         "number?".to_string(),
-        Expr::BuiltinFunction(BuiltinFunction::new(
-            "number?",
-            builtin_is_number,
-            BuiltinKind::SpecialForm,
-        )),
+        Expr::builtin_function("number?", builtin_is_number, BuiltinKind::SpecialForm),
     );
 
     scope.set_variable(
         "symbol?".to_string(),
-        Expr::BuiltinFunction(BuiltinFunction::new(
-            "symbol?",
-            builtin_is_symbol,
-            BuiltinKind::SpecialForm,
-        )),
+        Expr::builtin_function("symbol?", builtin_is_symbol, BuiltinKind::SpecialForm),
     );
 }
