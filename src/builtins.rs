@@ -27,18 +27,35 @@ fn builtin_apply(args: &[Expr], scope: &mut Scope) -> Result<Expr, String> {
 
     // Apply the function to the evaluated arguments
     match func {
+        Expr::Lambda(args, func) => {
+            if args.len() != arg_list.len() {
+                return Err(format!(
+                    "Expected {} arguments, got {}",
+                    args.len(),
+                    arg_list.len()
+                ));
+            }
+            // Create a new scope for the function application
+            let mut new_scope = Scope::with_parent(Rc::new(scope.clone()));
+            for (param, arg) in args.iter().zip(arg_list.iter()) {
+                new_scope.set_variable(param.clone(), eval(arg, scope)?);
+            }
+            eval(&func, &mut new_scope)
+        }
         Expr::Function(func) => {
-            if args.len() != func.parameters.len() {
-                return Err("Argument count does not match parameter count".to_string());
+            let evaluated_args: Result<Vec<_>, _> =
+                arg_list.iter().map(|arg| eval(arg, scope)).collect();
+            match evaluated_args {
+                Ok(evaluated_args) => {
+                    // Create a new scope for the function application
+                    let mut new_scope = Scope::with_parent(Rc::new(scope.clone()));
+                    for (param, arg) in func.parameters.iter().zip(evaluated_args) {
+                        new_scope.set_variable(param.clone(), arg);
+                    }
+                    eval(&func.body, &mut new_scope)
+                }
+                Err(e) => Err(e),
             }
-
-            let mut local_scope = Scope::with_parent(Rc::new(scope.clone()));
-            for (param, arg) in func.parameters.iter().zip(args) {
-                let arg_val = eval(arg, scope)?;
-                local_scope.set_variable(param.clone(), arg_val);
-            }
-
-            eval(&func.body, &mut local_scope)
         }
 
         Expr::BuiltinFunction(builtin_func) => {

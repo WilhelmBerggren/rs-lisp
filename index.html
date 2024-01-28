@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en" hidden class="flex h-full overflow-hidden bg-gray-600">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>RS Lisp</title>
+        <script type="module" src="https://cdn.skypack.dev/twind/shim"></script>
+    </head>
+    <body
+        class="m-auto my-4 flex h-full w-full max-w-[40rem] flex-col items-center justify-center md:p-4"
+    >
+        <textarea
+            readonly
+            id="output"
+            class="flex h-full min-h-[40rem] w-full resize-none overflow-scroll bg-gray-200 p-4 outline-none"
+        ></textarea>
+        <form id="inputForm" class="flex w-full flex-row">
+            <input name="input" class="w-full border p-2 outline-none" />
+            <input type="submit" class="cursor-pointer p-2" />
+        </form>
+        <script type="module">
+            import init, { Evaluator } from "./pkg/rs_lisp.js";
+            const output = document.getElementById("output");
+            const inputForm = document.getElementById("inputForm");
+            let evaluator;
+            window.Evaluator = Evaluator;
+            init().then(() => {
+                evaluator = new Evaluator();
+                output.textContent = `
+Welcome to RS Lisp!
+
+Type in a S-expression and press enter to evaluate it.
+
+Available forms are:
++ apply list fn quote def if first rest number? symbol?
+
+Try something like:
+(+ 1 2 3)
+(apply + (1 2 3))
+(def inc (fn (x) (+ x 1)))
+(inc 1)
+(apply inc (1 2 3))
+\n`;
+                inputForm.elements.input.value = "(+ 1 2 3)\n";
+                inputForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const input = inputForm.elements.input.value;
+                    output.textContent += `\n> ${inputForm.elements.input.value}\n${evaluator.eval(input)}`;
+                    output.scrollTo(0, output.scrollHeight);
+                    inputForm.elements.input.value = "";
+                });
+            });
+        </script>
+    </body>
+</html>

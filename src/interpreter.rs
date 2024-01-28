@@ -183,6 +183,7 @@ pub fn eval(expr: &Expr, scope: &mut Scope) -> Result<Expr, String> {
             match evaluated_first {
                 Expr::Lambda(parameters, body) => {
                     if list.len() != parameters.len() + 1 {
+                        println!("list: {:?}, params: {:?}", list, parameters);
                         return Err("Argument count does not match parameter count".to_string());
                     }
 
@@ -237,6 +238,7 @@ mod tests {
     use super::*;
     use crate::builtins::initialize_global_scope;
     use crate::interpreter::Expr;
+    use crate::parser::parse;
 
     #[test]
     fn parse_quote() {
@@ -439,5 +441,58 @@ mod tests {
         let result = eval(&apply_expr, &mut global_scope);
 
         assert_eq!(result, Ok(Expr::number(3.0)));
+    }
+
+    #[test]
+    fn apply_lambda() {
+        let mut global_scope = Scope::new();
+        let apply_expr = Expr::List(vec![
+            Expr::symbol("apply"),
+            Expr::lambda(vec!["x".to_string()], Expr::symbol("x")),
+            Expr::list(vec![Expr::number(3.0)]),
+        ]);
+
+        let result = eval(&apply_expr, &mut global_scope);
+
+        assert_eq!(result, Ok(Expr::number(3.0)));
+    }
+
+    #[test]
+    fn apply_parsed_lambda() {
+        let mut global_scope = Scope::new();
+        let lambda = eval(&parse("(fn (x) (+ x 1))").unwrap(), &mut global_scope);
+        assert_eq!(
+            lambda,
+            Ok(Expr::lambda(
+                vec!["x".to_string()],
+                Expr::list(vec![
+                    Expr::symbol("+"),
+                    Expr::symbol("x"),
+                    Expr::number(1.0)
+                ])
+            ))
+        );
+        assert_eq!(
+            eval(
+                &parse("(apply (fn (x) (+ x 1)) (3))").unwrap(),
+                &mut global_scope
+            ),
+            Ok(Expr::number(4.0))
+        );
+        assert_eq!(
+            eval(
+                &parse("(def inc (fn (x) (+ x 1)))").unwrap(),
+                &mut global_scope
+            ),
+            Ok(Expr::symbol("inc"))
+        );
+        assert_eq!(
+            eval(&parse("(apply inc (3))").unwrap(), &mut global_scope),
+            Ok(Expr::number(4.0))
+        );
+        assert_eq!(
+            eval(&parse("(apply inc (1 3))").unwrap(), &mut global_scope),
+            Err("Expected 1 arguments, got 2".to_string())
+        )
     }
 }
