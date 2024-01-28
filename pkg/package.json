@@ -1,0 +1,14 @@
+{
+  "name": "rs-lisp",
+  "version": "0.1.0",
+  "files": [
+    "rs_lisp_bg.wasm",
+    "rs_lisp.js",
+    "rs_lisp.d.ts"
+  ],
+  "module": "rs_lisp.js",
+  "types": "rs_lisp.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
