@@ -13,7 +13,7 @@ A little lisp interpreter written in Rust.
 wasm-pack build --target web
 ```
 
-## Run WASM
+## Run web demo
 
 ```bash
 npx serve
