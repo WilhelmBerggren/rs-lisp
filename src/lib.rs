@@ -10,6 +10,12 @@ pub struct Evaluator {
     scope: Scope,
 }
 
+impl Default for Evaluator {
+    fn default() -> Self {
+        Evaluator::new()
+    }
+}
+
 #[wasm_bindgen]
 impl Evaluator {
     #[wasm_bindgen(constructor)]

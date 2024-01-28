@@ -271,7 +271,7 @@ fn builtin_let(args: &[Expr], scope: &mut Scope) -> Result<Expr, String> {
 }
 
 fn builtin_cond(args: &[Expr], scope: &mut Scope) -> Result<Expr, String> {
-    if args.len() < 1 {
+    if args.is_empty() {
         return Err("cond expects at least 1 argument".to_string());
     }
 
