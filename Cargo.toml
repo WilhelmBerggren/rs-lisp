@@ -1,9 +1,10 @@
 [package]
-name = "rs-lisp"
+name = "rs_lisp"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
+name = "rs_lisp"
 crate-type = ["cdylib"]
 
 [dependencies]

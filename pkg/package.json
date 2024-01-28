@@ -1,5 +1,5 @@
 {
-  "name": "rs-lisp",
+  "name": "rs_lisp",
   "version": "0.1.0",
   "files": [
     "rs_lisp_bg.wasm",

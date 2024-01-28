@@ -3,6 +3,7 @@ use std::rc::Rc;
 use crate::interpreter::{eval, BuiltinKind, Expr, Scope};
 
 fn builtin_add(args: &[Expr], _: &mut Scope) -> Result<Expr, String> {
+    println!("builtin_add: {:?}", args);
     let mut result = 0.0;
     for expr in &args[0..] {
         if let Expr::Number(n) = expr {
@@ -19,11 +20,15 @@ fn builtin_apply(args: &[Expr], scope: &mut Scope) -> Result<Expr, String> {
         return Err("apply expects exactly 2 arguments".to_string());
     }
 
+    println!("builtin_apply: {:?}", args);
     let func = eval(&args[0], scope)?;
-    let arg_list = match &args[1] {
+    let arg_list = match eval(&args[1], scope)? {
         Expr::List(list) => list,
         _ => return Err("Second argument to apply must be a list".to_string()),
     };
+
+    println!("func: {:?}", func);
+    println!("arg_list: {:?}", arg_list);
 
     // Apply the function to the evaluated arguments
     match func {
@@ -64,15 +69,19 @@ fn builtin_apply(args: &[Expr], scope: &mut Scope) -> Result<Expr, String> {
                     // For eagerly evaluated built-ins
                     let evaluated_args: Result<Vec<_>, _> =
                         arg_list.iter().map(|arg| eval(arg, scope)).collect();
+                    println!("evaluated_args: {:?}", evaluated_args);
                     (builtin_func.func)(&evaluated_args?, scope)
                 }
                 BuiltinKind::SpecialForm => {
                     // For special forms, pass the raw arguments
-                    (builtin_func.func)(arg_list, scope)
+                    (builtin_func.func)(&arg_list, scope)
                 }
             }
         }
-        _ => Err("First argument to apply is not a function".to_string()),
+        _ => {
+            println!("func: {:?}", func);
+            Err("First argument to apply is not a function".to_string())
+        }
     }
 }
 
@@ -211,6 +220,85 @@ fn builtin_is_symbol(args: &[Expr], _: &mut Scope) -> Result<Expr, String> {
     }
 }
 
+fn builtin_is_list(args: &[Expr], _: &mut Scope) -> Result<Expr, String> {
+    if args.len() != 1 {
+        return Err("list? expects exactly 1 argument".to_string());
+    }
+
+    match &args[0] {
+        Expr::List(_) => Ok(Expr::Number(1.0)),
+        _ => Ok(Expr::Number(0.0)),
+    }
+}
+
+fn builtin_let(args: &[Expr], scope: &mut Scope) -> Result<Expr, String> {
+    if args.len() != 2 {
+        return Err("let expects exactly 2 arguments".to_string());
+    }
+
+    let bindings = if let Expr::List(bindings) = &args[0] {
+        bindings
+            .iter()
+            .map(|expr| {
+                if let Expr::List(binding) = expr {
+                    if binding.len() != 2 {
+                        return Err("Binding must be a list of length 2".to_string());
+                    }
+
+                    let name = if let Expr::Symbol(name) = &binding[0] {
+                        name
+                    } else {
+                        return Err("Binding name must be a symbol".to_string());
+                    };
+
+                    Ok((name.clone(), binding[1].clone()))
+                } else {
+                    Err("Binding must be a list".to_string())
+                }
+            })
+            .collect::<Result<Vec<(String, Expr)>, String>>()?
+    } else {
+        return Err("Bindings must be a list".to_string());
+    };
+
+    let mut new_scope = Scope::with_parent(Rc::new(scope.clone()));
+
+    for (name, value) in bindings {
+        new_scope.set_variable(name, eval(&value, scope)?);
+    }
+
+    eval(&args[1], &mut new_scope)
+}
+
+fn builtin_cond(args: &[Expr], scope: &mut Scope) -> Result<Expr, String> {
+    if args.len() < 1 {
+        return Err("cond expects at least 1 argument".to_string());
+    }
+
+    for arg in args {
+        if let Expr::List(list) = arg {
+            if list.len() != 2 {
+                return Err("cond clause must be a list of length 2".to_string());
+            }
+
+            let condition = eval(&list[0], scope)?;
+
+            match condition {
+                Expr::Number(n) => {
+                    if n != 0.0 {
+                        return eval(&list[1], scope);
+                    }
+                }
+                _ => return Err("Condition must be a number".to_string()),
+            }
+        } else {
+            return Err("cond clause must be a list".to_string());
+        }
+    }
+
+    Err("No cond clause matched".to_string())
+}
+
 pub fn initialize_global_scope(scope: &mut Scope) {
     scope.set_variable(
         "+".to_string(),
@@ -259,11 +347,26 @@ pub fn initialize_global_scope(scope: &mut Scope) {
 
     scope.set_variable(
         "number?".to_string(),
-        Expr::builtin_function("number?", builtin_is_number, BuiltinKind::SpecialForm),
+        Expr::builtin_function("number?", builtin_is_number, BuiltinKind::Eager),
     );
 
     scope.set_variable(
         "symbol?".to_string(),
-        Expr::builtin_function("symbol?", builtin_is_symbol, BuiltinKind::SpecialForm),
+        Expr::builtin_function("symbol?", builtin_is_symbol, BuiltinKind::Eager),
+    );
+
+    scope.set_variable(
+        "list?".to_string(),
+        Expr::builtin_function("let", builtin_is_list, BuiltinKind::Eager),
+    );
+
+    scope.set_variable(
+        "let".to_string(),
+        Expr::builtin_function("let", builtin_let, BuiltinKind::SpecialForm),
+    );
+
+    scope.set_variable(
+        "cond".to_string(),
+        Expr::builtin_function("let", builtin_cond, BuiltinKind::SpecialForm),
     );
 }

@@ -4,7 +4,6 @@ use wasm_bindgen::prelude::*;
 pub mod builtins;
 pub mod interpreter;
 pub mod parser;
-pub mod repl;
 
 #[wasm_bindgen]
 pub struct Evaluator {

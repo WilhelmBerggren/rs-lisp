@@ -36,10 +36,10 @@ Available forms are:
 
 Try something like:
 (+ 1 2 3)
-(apply + (1 2 3))
+(apply + (list 1 2 3))
 (def inc (fn (x) (+ x 1)))
 (inc 1)
-(apply inc (1 2 3))
+(apply inc (list 5))
 \n`;
                 inputForm.elements.input.value = "(+ 1 2 3)\n";
                 inputForm.addEventListener("submit", (e) => {
